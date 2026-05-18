@@ -184,15 +184,51 @@ body, html {
 
 .target-arrow {
   position: absolute;
-  top: -5px;
+  top: -14px;
   left: 50%;
   transform: translateX(-50%);
   width: 0;
   height: 0;
-  border-left: 12px solid transparent;
-  border-right: 12px solid transparent;
-  border-bottom: 18px solid #ffd700; /* Gold color */
-  filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.8));
+  border-left: 18px solid transparent;
+  border-right: 18px solid transparent;
+  border-bottom: 26px solid #ffd700; /* Gold color */
+  filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.9));
+  z-index: 5;
+}
+
+/* Expanding golden ripple animations focused on the indicator tip */
+.target-ripple {
+  position: absolute;
+  top: -36px;
+  left: 50%;
+  transform: translateX(-50%) scale(0.5);
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 215, 0, 0.45);
+  pointer-events: none;
+  transform-origin: center center;
+  animation: targetRipple 2.2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  z-index: 4;
+}
+
+.target-ripple.delayed {
+  animation-delay: 1.1s;
+}
+
+@keyframes targetRipple {
+  0% {
+    opacity: 0.85;
+    transform: translateX(-50%) scale(0.4);
+    border-color: rgba(255, 215, 0, 0.7);
+    box-shadow: 0 0 8px rgba(255, 215, 0, 0.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) scale(1.9);
+    border-color: rgba(255, 215, 0, 0);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0);
+  }
 }
 
 /* Center Readout Display */

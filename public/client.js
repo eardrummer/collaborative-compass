@@ -166,12 +166,12 @@ async function activateSensors() {
 
   sensorsActivated = true;
 
-  // Fallback check: if no absolute orientation events are received within 1000ms, activate manual fallback
+  // Fallback check: if no absolute orientation events are received within 2000ms, activate manual fallback
   setTimeout(() => {
     if (!hasDirectionSensors) {
       setupManualFallback();
     }
-  }, 1000);
+  }, 2000);
 }
 
 // Bind browser orientation stream listeners
@@ -398,7 +398,7 @@ if (pushContainer) {
   });
 }
 
-// Automatic sensor check & fallback timer: if sensors are not active within 2500ms, auto-dismiss blocker and load manual mode!
+// Automatic sensor check & fallback timer: if sensors are not active within 5000ms, auto-dismiss blocker and load manual mode!
 setTimeout(() => {
   // If sensors are already active and streaming, just fade out the blocker overlay cleanly
   if (hasDirectionSensors) {
@@ -428,4 +428,4 @@ setTimeout(() => {
     setupManualFallback();
     sensorsActivated = true;
   }
-}, 2500);
+}, 5000);
