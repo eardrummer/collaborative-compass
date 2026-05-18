@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Mobile Compass Client</title>
+  <link rel="stylesheet" href="/css/client.css">
+</head>
+<body class="theme-default">
+
+  <!-- Background glow aura that changes theme and color dynamically -->
+  <div id="bg-glow-fx"></div>
+
+  <!-- Permission / Startup Screen (iOS Safari Handshake Requirement) -->
+  <div id="overlay-screen">
+    <div class="glass-panel pulsing-glow" id="permission-panel">
+      <h2>Web Compass Setup</h2>
+      <p>
+        This interactive experience uses your phone's built-in motion sensors to align your digital compass in real-time.
+      </p>
+      <button id="btn-grant-permission" class="btn-premium">
+        <span>ACTIVATE COMPASS</span>
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Client Screen (Visible post authorization) -->
+  <div id="app-container">
+    
+    <!-- Top bar displaying assigned identity -->
+    <div id="identity-bar">
+      <div class="device-tag">
+        <span class="status-dot" id="identity-dot"></span>
+        <span id="identity-label">Awaiting Identity...</span>
+      </div>
+      <span class="calibrated-tag" id="calibration-status-tag">Uncalibrated</span>
+    </div>
+
+    <!-- Server Pushed Notifications / Central Broadcast Card -->
+    <div id="push-message-container">
+      <div id="push-message-card">
+        <h1 id="server-message-display"></h1>
+        <span id="dismiss-message-tip">TAP TO REVEAL COMPASS</span>
+      </div>
+    </div>
+
+    <!-- Compass Instrument Section -->
+    <div id="compass-wrapper">
+      <!-- Target Angle Overlay indicator (Controlled by Server) -->
+      <div id="target-heading-indicator">
+        <div class="target-arrow"></div>
+      </div>
+
+      <!-- The Rotatable SVG Compass Dial -->
+      <div id="compass-ring">
+        <svg class="compass-svg" viewBox="0 0 200 200">
+          <!-- Outer ring ticks -->
+          <circle cx="100" cy="100" r="95" class="dial-face" />
+          
+          <!-- Cardinal markings -->
+          <text x="100" y="25" class="cardinal-text cardinal-north">N</text>
+          <text x="175" y="100" class="cardinal-text">E</text>
+          <text x="100" y="175" class="cardinal-text">S</text>
+          <text x="25" y="100" class="cardinal-text">W</text>
+
+          <!-- Mini dial hashes at 45 degree points (NE, SE, SW, NW) -->
+          <g transform="rotate(45 100 100)">
+            <line x1="100" y1="10" x2="100" y2="15" class="tick-mark" />
+            <line x1="100" y1="185" x2="100" y2="190" class="tick-mark" />
+            <line x1="10" y1="100" x2="15" y2="100" class="tick-mark" />
+            <line x1="185" y1="100" x2="190" y2="100" class="tick-mark" />
+          </g>
+          
+          <!-- Minor dial hashes every 30 degrees -->
+          <g transform="rotate(30 100 100)"><line x1="100" y1="10" x2="100" y2="14" class="tick-mark" /></g>
+          <g transform="rotate(60 100 100)"><line x1="100" y1="10" x2="100" y2="14" class="tick-mark" /></g>
+          <g transform="rotate(120 100 100)"><line x1="100" y1="10" x2="100" y2="14" class="tick-mark" /></g>
+          <g transform="rotate(150 100 100)"><line x1="100" y1="10" x2="100" y2="14" class="tick-mark" /></g>
+          <g transform="rotate(210 100 100)"><line x1="100" y1="10" x2="100" y2="14" class="tick-mark" /></g>
+          <g transform="rotate(240 100 100)"><line x1="100" y1="10" x2="100" y2="14" class="tick-mark" /></g>
+          <g transform="rotate(300 100 100)"><line x1="100" y1="10" x2="100" y2="14" class="tick-mark" /></g>
+          <g transform="rotate(330 100 100)"><line x1="100" y1="10" x2="100" y2="14" class="tick-mark" /></g>
+        </svg>
+      </div>
+
+      <!-- Static Heading Readout Center Panel -->
+      <div id="compass-center">
+        <div>
+          <span class="degree-val" id="degree-readout">000</span>
+          <span class="degree-unit">°</span>
+        </div>
+        <span class="heading-label" id="heading-cardinal">N</span>
+      </div>
+    </div>
+
+    <!-- Interactive Action Control & Message Box -->
+    <div style="width: 100%; padding-bottom: 1.5rem;">
+      <!-- Calibration Button -->
+      <button id="btn-calibrate" class="btn-premium">
+        <span>SET CURRENT DIRECTION AS NORTH</span>
+      </button>
+    </div>
+
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/client.js"></script>
+</body>
+</html>

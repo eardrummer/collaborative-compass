@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Collaborative Compass Controller</title>
+  <link rel="stylesheet" href="/css/server.css">
+</head>
+<body>
+
+  <header>
+    <div>
+      <h1>Compass Command Console</h1>
+      <p style="color: rgba(255,255,255,0.4); font-size: 0.9rem; margin-top: 4px;">Real-time mobile choreography and sensor manager</p>
+    </div>
+    <div class="status-badge">
+      <span class="status-dot"></span>
+      <span>Controller Node: Active</span>
+    </div>
+  </header>
+
+  <div class="dashboard-grid">
+    <!-- Left Panel: Action Controller -->
+    <div class="control-panel">
+      <!-- Client Color Themes -->
+      <div class="panel-card">
+        <h2>Global Color Themes</h2>
+        <div class="form-group">
+          <label for="theme-select">Active Backdrop Theme</label>
+          <select id="theme-select" class="styled-select">
+            <option value="default">Amber Obsidian (Deep Black/Amber)</option>
+            <option value="gradient">Burnt Amber (Warm Dark Gradient)</option>
+            <option value="matrix">Bronze Rust (Coppery Bronze/Orange)</option>
+            <option value="gold-glow">Golden Aura (Radiant Gold)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Server Pushed Orientations / Guided Target -->
+      <div class="panel-card">
+        <h2>Guided Target Heading</h2>
+        <p style="font-size: 0.8rem; color: rgba(255,255,255,0.4); line-height: 1.4; margin-bottom: 1rem;">
+          Specify a heading. Connected client compasses will display a golden target marker pointing them towards this direction.
+        </p>
+        
+        <div class="form-group">
+          <label style="display: flex; justify-content: space-between;">
+            <span>Target Angle</span>
+            <span id="target-angle-display" style="color: #ffd700; font-weight: 600;">None</span>
+          </label>
+          
+          <div class="target-selector-wrap">
+            <div class="angle-slider-wrap">
+              <input type="range" id="target-slider" class="styled-slider" min="0" max="359" value="0" disabled>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 10px; margin-top: 1rem;">
+            <button id="btn-enable-target" class="btn-action">Enable Target</button>
+            <button id="btn-disable-target" class="btn-action secondary" style="display: none;">Clear Target</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Messages and Alerts -->
+      <div class="panel-card">
+        <h2>Live Broadcast Prompt</h2>
+        <div class="form-group">
+          <label for="broadcast-input">Custom Message Overlay</label>
+          <input type="text" id="broadcast-input" class="styled-input" placeholder="e.g. Face North together!" maxlength="45">
+        </div>
+        <div class="form-group" style="display: flex; gap: 10px;">
+          <button id="btn-send-broadcast" class="btn-action">Push Message</button>
+          <button id="btn-clear-broadcast" class="btn-action secondary">Clear</button>
+        </div>
+      </div>
+
+      <!-- Interactive Strobe Flash Trigger -->
+      <div class="panel-card">
+        <h2>Instant Visual Signals</h2>
+        <p style="font-size: 0.8rem; color: rgba(255,255,255,0.4); line-height: 1.4; margin-bottom: 1rem;">
+          Sends a rapid full-screen white strobe pulse to all connected phones.
+        </p>
+        <button id="btn-trigger-flash" class="btn-action" style="background: #fff; color: #000; font-weight: 800; box-shadow: 0 0 15px rgba(255,255,255,0.25);">
+          ⚡ TRIGGER FLASH STROBE
+        </button>
+      </div>
+    </div>
+
+    <!-- Right Panel: Connected Device Monitor Grid -->
+    <div class="monitor-panel">
+      <!-- Statistics -->
+      <div class="stats-bar">
+        <div class="stat-card">
+          <span id="stat-connected-count" class="val">0</span>
+          <span class="lbl">Connected Phones</span>
+        </div>
+        <div class="stat-card">
+          <span id="stat-calibrated-count" class="val">0</span>
+          <span class="lbl">Calibrated Compasses</span>
+        </div>
+        <div class="stat-card">
+          <span id="stat-avg-angle" class="val">-</span>
+          <span class="lbl">Average Heading</span>
+        </div>
+      </div>
+
+      <!-- Connected Devices Live Grid -->
+      <div class="clients-grid" id="clients-grid-container">
+        <div class="no-clients" id="no-clients-message">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+          </svg>
+          <h3>No Devices Connected</h3>
+          <p style="margin-top: 8px; font-size: 0.85rem; max-width: 280px;">
+            Open the <a href="/client" target="_blank" style="color: var(--accent-color); text-decoration: none; font-weight: 600;">Client Interface</a> on your mobile device to start tracking.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/server.js"></script>
+</body>
+</html>
