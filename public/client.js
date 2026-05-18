@@ -398,8 +398,22 @@ if (pushContainer) {
   });
 }
 
-// Automatic sensor check & fallback timer: if sensors are not activated within 1500ms, auto-dismiss blocker and load manual mode!
+// Automatic sensor check & fallback timer: if sensors are not active within 2500ms, auto-dismiss blocker and load manual mode!
 setTimeout(() => {
+  // If sensors are already active and streaming, just fade out the blocker overlay cleanly
+  if (hasDirectionSensors) {
+    console.log('Sensors actively streaming. Dismissing permission card.');
+    if (overlayScreen) {
+      overlayScreen.style.opacity = '0';
+      setTimeout(() => {
+        overlayScreen.style.display = 'none';
+      }, 500);
+    }
+    sensorsActivated = true;
+    return;
+  }
+
+  // If no sensors are detected and not activated yet, trigger manual mode fallback
   if (!sensorsActivated) {
     console.warn('Sensors not activated in time. Engaging manual fallback.');
     
@@ -414,4 +428,4 @@ setTimeout(() => {
     setupManualFallback();
     sensorsActivated = true;
   }
-}, 1500);
+}, 2500);
