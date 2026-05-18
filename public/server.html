@@ -75,6 +75,22 @@
         </div>
       </div>
 
+      <!-- Dynamic Reflection Prompts -->
+      <div class="panel-card">
+        <h2>Reflection Prompts</h2>
+        <p style="font-size: 0.8rem; color: rgba(255,255,255,0.4); line-height: 1.4; margin-bottom: 1rem;">
+          Sends an interactive text prompt to all client screens with an input field. Clients can submit a response back to this console.
+        </p>
+        <div class="form-group">
+          <label for="reflection-input">Reflection Prompt Text</label>
+          <input type="text" id="reflection-input" class="styled-input" placeholder="e.g. What direction do you feel drawn to?" maxlength="100">
+        </div>
+        <div class="form-group" style="display: flex; gap: 10px;">
+          <button id="btn-send-reflection" class="btn-action">Send Prompt</button>
+          <button id="btn-clear-reflection" class="btn-action secondary">Clear</button>
+        </div>
+      </div>
+
       <!-- Interactive Strobe Flash Trigger -->
       <div class="panel-card">
         <h2>Instant Visual Signals</h2>
@@ -115,6 +131,19 @@
           <p style="margin-top: 8px; font-size: 0.85rem; max-width: 280px;">
             Open the <a href="/client" target="_blank" style="color: var(--accent-color); text-decoration: none; font-weight: 600;">Client Interface</a> on your mobile device to start tracking.
           </p>
+        </div>
+      </div>
+
+      <!-- Live Reflection Responses Feed -->
+      <div class="responses-panel">
+        <div class="responses-header">
+          <h2>Live Reflection Responses</h2>
+          <button id="btn-clear-responses" class="btn-action secondary inline-btn">Clear Feed</button>
+        </div>
+        <div class="responses-feed" id="responses-feed-container">
+          <div class="no-responses" id="no-responses-message">
+            <p>No reflection responses received yet. Send a prompt above to collect thoughts.</p>
+          </div>
         </div>
       </div>
     </div>

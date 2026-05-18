@@ -47,7 +47,8 @@ let currentAppState = {
   theme: 'default',       // default (black), gradient, matrix, gold-glow
   targetHeading: null,    // target heading in degrees (e.g. 90 for East) or null
   activeAlert: '',        // text pushed by the server
-  flashSignal: false      // true triggers a rapid flash animation
+  flashSignal: false,     // true triggers a rapid flash animation
+  reflectionPrompt: ''    // prompt for active reflection overlays
 };
 
 io.on('connection', (socket) => {
@@ -122,6 +123,25 @@ io.on('connection', (socket) => {
           isCalibrated: true,
           heading: clients[socket.id].heading
         });
+      }
+    }
+  });
+
+  // Handle reflection response submits from clients
+  socket.on('client-reflection-submit', (data) => {
+    if (clients[socket.id]) {
+      const responsePayload = {
+        clientId: socket.id,
+        deviceLabel: clients[socket.id].deviceLabel,
+        color: clients[socket.id].color,
+        text: data.text,
+        timestamp: new Date().toLocaleTimeString()
+      };
+      console.log(`Received reflection response from ${clients[socket.id].deviceLabel}: "${data.text}"`);
+
+      // Forward response to the controller dashboard
+      if (controllerSocketId) {
+        io.to(controllerSocketId).emit('reflection-response-received', responsePayload);
       }
     }
   });

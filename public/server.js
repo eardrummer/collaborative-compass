@@ -27,6 +27,14 @@ const btnSendBroadcast = document.getElementById('btn-send-broadcast');
 const btnClearBroadcast = document.getElementById('btn-clear-broadcast');
 const btnTriggerFlash = document.getElementById('btn-trigger-flash');
 
+// Reflection DOM Cache
+const reflectionInput = document.getElementById('reflection-input');
+const btnSendReflection = document.getElementById('btn-send-reflection');
+const btnClearReflection = document.getElementById('btn-clear-reflection');
+const responsesFeedContainer = document.getElementById('responses-feed-container');
+const noResponsesMessage = document.getElementById('no-responses-message');
+const btnClearResponses = document.getElementById('btn-clear-responses');
+
 // Initialize communication
 socket.on('connect', () => {
   console.log('Connected to server. Registering as controller dashboard.');
@@ -92,6 +100,28 @@ socket.on('client-disconnected', (id) => {
   }
   delete connectedDevices[id];
   updateStatistics();
+});
+
+// Manage incoming reflection text responses
+socket.on('reflection-response-received', (data) => {
+  console.log('Received reflection response:', data);
+  
+  // Hide no-responses screen
+  if (noResponsesMessage) {
+    noResponsesMessage.style.display = 'none';
+  }
+
+  const responseHtml = `
+    <div class="response-item" style="border-left-color: ${data.color.hex}">
+      <div class="response-item-header">
+        <span class="response-item-device" style="color: ${data.color.hex}">${data.deviceLabel}</span>
+        <span class="response-item-time">${data.timestamp}</span>
+      </div>
+      <div class="response-item-text">"${data.text}"</div>
+    </div>
+  `;
+
+  responsesFeedContainer.insertAdjacentHTML('afterbegin', responseHtml);
 });
 
 // Render client status card in the dashboard grid
@@ -192,6 +222,11 @@ function restoreUIState() {
 
   // Restore message input
   broadcastInput.value = globalState.activeAlert;
+
+  // Restore reflection input
+  if (reflectionInput) {
+    reflectionInput.value = globalState.reflectionPrompt || '';
+  }
 }
 
 // Dashboard Control UI Event Listeners
@@ -242,4 +277,23 @@ btnTriggerFlash.addEventListener('click', () => {
   setTimeout(() => {
     pushServerCommand({ flashSignal: false });
   }, 400);
+});
+
+// Reflection Control Button Listeners
+btnSendReflection.addEventListener('click', () => {
+  const promptText = reflectionInput.value.trim();
+  pushServerCommand({ reflectionPrompt: promptText });
+});
+
+btnClearReflection.addEventListener('click', () => {
+  reflectionInput.value = '';
+  pushServerCommand({ reflectionPrompt: '' });
+});
+
+btnClearResponses.addEventListener('click', () => {
+  const items = responsesFeedContainer.querySelectorAll('.response-item');
+  items.forEach(item => item.remove());
+  if (noResponsesMessage) {
+    noResponsesMessage.style.display = 'block';
+  }
 });

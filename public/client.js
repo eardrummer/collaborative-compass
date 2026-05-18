@@ -14,6 +14,7 @@ let alphaOffset = 0;
 let currentHeading = 0;
 let isCalibrated = false;
 let sensorsActivated = false;
+let hasDirectionSensors = false; // Track absolute coordinate readings availability
 
 // DOM Cache
 const overlayScreen = document.getElementById('overlay-screen');
@@ -25,6 +26,12 @@ const headingCardinal = document.getElementById('heading-cardinal');
 const targetIndicator = document.getElementById('target-heading-indicator');
 const calibrationStatusTag = document.getElementById('calibration-status-tag');
 const serverMessageDisplay = document.getElementById('server-message-display');
+
+// Reflection DOM Cache
+const reflectionContainer = document.getElementById('reflection-container');
+const reflectionPromptText = document.getElementById('reflection-prompt-text');
+const reflectionTextarea = document.getElementById('reflection-textarea');
+const btnSubmitReflection = document.getElementById('btn-submit-reflection');
 
 // Identity DOM Cache
 const identityDot = document.getElementById('identity-dot');
@@ -103,6 +110,28 @@ function handleServerStateChange(state) {
       document.body.classList.remove('flash-triggered');
     }, 350);
   }
+
+  // 5. Dynamic Reflection Prompts
+  if (state.reflectionPrompt && state.reflectionPrompt.trim() !== '') {
+    if (reflectionPromptText.textContent !== state.reflectionPrompt) {
+      reflectionPromptText.textContent = state.reflectionPrompt;
+      if (reflectionTextarea) {
+        reflectionTextarea.value = '';
+        reflectionTextarea.disabled = false;
+      }
+      if (btnSubmitReflection) {
+        btnSubmitReflection.disabled = false;
+        const span = btnSubmitReflection.querySelector('span');
+        if (span) span.textContent = 'SUBMIT RESPONSE';
+      }
+      if (reflectionContainer) {
+        reflectionContainer.classList.add('active');
+      }
+    }
+  } else {
+    if (reflectionPromptText) reflectionPromptText.textContent = '';
+    if (reflectionContainer) reflectionContainer.classList.remove('active');
+  }
 }
 
 // Request device orientation sensor streams (iOS Safari requirement)
@@ -136,31 +165,53 @@ async function activateSensors() {
   }, 500);
 
   sensorsActivated = true;
+
+  // Fallback check: if no absolute orientation events are received within 1000ms, activate manual fallback
+  setTimeout(() => {
+    if (!hasDirectionSensors) {
+      setupManualFallback();
+    }
+  }, 1000);
 }
 
 // Bind browser orientation stream listeners
 function initializeOrientationListener() {
-  window.addEventListener('deviceorientation', handleOrientation, true);
+  if ('ondeviceorientationabsolute' in window) {
+    window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+  } else if ('ondeviceorientation' in window) {
+    window.addEventListener('deviceorientation', handleOrientation, true);
+  } else {
+    setupManualFallback();
+  }
 }
 
 // Primary sensor math
 function handleOrientation(event) {
-  // Standard alpha represents rotation of device around z-axis (0 to 360 degrees)
-  let alpha = event.alpha;
+  let heading = null;
 
-  // Fail-safe check for empty readings (some desktop browsers pass null)
-  if (alpha === null || alpha === undefined) {
+  // iOS webkitCompassHeading directly maps device to absolute magnetic North
+  if (event.webkitCompassHeading !== undefined && event.webkitCompassHeading !== null) {
+    heading = event.webkitCompassHeading;
+  } else if (event.alpha !== null && event.alpha !== undefined) {
+    // Standard absolute orientation (degrees counter-clockwise around Z)
+    heading = (360 - event.alpha) % 360;
+  }
+
+  // Fail-safe check for empty readings (some browsers fire once with null values)
+  if (heading === null) {
     return;
   }
 
-  rawAlpha = alpha;
+  // Confirmed: Device has absolute sensor hardware and is actively streaming
+  hasDirectionSensors = true;
+  isCalibrated = true; // Absolute North requires zero manual setup
 
-  // Calculate heading relative to calibration offset point
-  if (isCalibrated) {
-    currentHeading = (rawAlpha - alphaOffset + 360) % 360;
-  } else {
-    currentHeading = rawAlpha % 360;
-  }
+  currentHeading = heading;
+  
+  // Hide manual keys since absolute heading is online
+  btnCalibrate.style.display = 'none';
+  calibrationStatusTag.textContent = 'Absolute Compass';
+  calibrationStatusTag.classList.add('active');
 
   updateCompassUI();
 
@@ -228,35 +279,109 @@ function updateTargetIndicator() {
   }
 }
 
-// Calibrate Current Direction as relative North
-function calibrateNorth() {
-  // If sensors are active, capture baseline raw alpha
-  if (sensorsActivated) {
-    alphaOffset = rawAlpha;
-    isCalibrated = true;
-    
-    // Update local UI tag
-    calibrationStatusTag.textContent = 'Calibrated';
-    calibrationStatusTag.classList.add('active');
+// Manual drag simulation fallback logic
+let isDragging = false;
+let startX = 0;
+let startHeading = 0;
 
-    // Signal calibration update to server
-    socket.emit('client-calibrated');
-    
-    // Short success vibration click
-    if ('vibrate' in navigator) {
-      navigator.vibrate(60);
-    }
-    
-    updateCompassUI();
-  } else {
-    // Bypasses modal in case sensors were somehow bypassed
-    activateSensors();
+function setupManualFallback() {
+  // Only show set north button if not calibrated yet
+  if (!isCalibrated) {
+    btnCalibrate.style.display = 'flex';
   }
+  calibrationStatusTag.textContent = 'Manual Mode';
+  calibrationStatusTag.classList.remove('active');
+
+  // Add swipe/drag listeners on screen to rotate compass face
+  document.body.addEventListener('mousedown', dragStart);
+  document.body.addEventListener('mousemove', dragMove);
+  document.body.addEventListener('mouseup', dragEnd);
+
+  document.body.addEventListener('touchstart', dragStart, { passive: true });
+  document.body.addEventListener('touchmove', dragMove, { passive: true });
+  document.body.addEventListener('touchend', dragEnd);
+}
+
+function dragStart(e) {
+  isDragging = true;
+  startX = e.clientX || (e.touches && e.touches[0].clientX);
+  startHeading = currentHeading;
+}
+
+function dragMove(e) {
+  if (!isDragging) return;
+  const currentX = e.clientX || (e.touches && e.touches[0].clientX);
+  const diffX = currentX - startX;
+
+  // Map swipe pixel delta to degrees rotation
+  currentHeading = (startHeading - (diffX * 0.4) + 360) % 360;
+  updateCompassUI();
+
+  socket.emit('client-orientation', {
+    heading: currentHeading,
+    isCalibrated: isCalibrated
+  });
+}
+
+function dragEnd() {
+  isDragging = false;
+}
+
+// Calibrate Current Direction as relative North (Fallback mode)
+function calibrateNorth() {
+  if (isCalibrated) return;
+
+  isCalibrated = true;
+  
+  // Update local UI tag
+  calibrationStatusTag.textContent = 'Calibrated';
+  calibrationStatusTag.classList.add('active');
+
+  // Hide manual calibration button completely (explicitly, and only once!)
+  btnCalibrate.style.display = 'none';
+
+  // Signal calibration update to server
+  socket.emit('client-calibrated');
+
+  // Short haptic confirmation click
+  if ('vibrate' in navigator) {
+    navigator.vibrate(60);
+  }
+
+  updateCompassUI();
 }
 
 // Event Bindings
 btnGrantPermission.addEventListener('click', activateSensors);
 btnCalibrate.addEventListener('click', calibrateNorth);
+
+if (btnSubmitReflection) {
+  btnSubmitReflection.addEventListener('click', () => {
+    const responseText = reflectionTextarea.value.trim();
+    if (responseText === '') return;
+
+    // Emit response back to server
+    socket.emit('client-reflection-submit', { text: responseText });
+
+    // Lock UI input states for submission visual feedback
+    reflectionTextarea.disabled = true;
+    btnSubmitReflection.disabled = true;
+    const span = btnSubmitReflection.querySelector('span');
+    if (span) span.textContent = 'SUBMITTED';
+
+    // Tactical tick haptic vibration
+    if ('vibrate' in navigator) {
+      navigator.vibrate(45);
+    }
+
+    // Smooth fade out animation delay
+    setTimeout(() => {
+      if (reflectionContainer) {
+        reflectionContainer.classList.remove('active');
+      }
+    }, 1000);
+  });
+}
 
 // Tap-to-minimize live broadcast alerts
 const pushContainer = document.getElementById('push-message-container');
@@ -272,3 +397,21 @@ if (pushContainer) {
     }
   });
 }
+
+// Automatic sensor check & fallback timer: if sensors are not activated within 1500ms, auto-dismiss blocker and load manual mode!
+setTimeout(() => {
+  if (!sensorsActivated) {
+    console.warn('Sensors not activated in time. Engaging manual fallback.');
+    
+    // Auto-dismiss overlay screen
+    if (overlayScreen) {
+      overlayScreen.style.opacity = '0';
+      setTimeout(() => {
+        overlayScreen.style.display = 'none';
+      }, 500);
+    }
+    
+    setupManualFallback();
+    sensorsActivated = true;
+  }
+}, 1500);
